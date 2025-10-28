@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 class Account implements Comparable<Account> {
     private int id;
@@ -67,8 +69,44 @@ public class JavaReminders {
         List<Account> accounts = new ArrayList<>();
         accounts = generateAccounts(5);
         Collections.sort(accounts);
+        System.out.println("\nAll accounts");
         for (Account account : accounts) {
             System.out.println(account);
+        }
+        System.out.println("\nover 50");
+        accounts.stream()
+            .filter(acc -> acc.getAge()>50)
+            .forEach(System.out::println);
+
+        System.out.println("\nunder 50's (sorted by age)");
+        accounts.stream()
+            .filter(acc -> acc.getAge()<50)
+            .sorted(Comparator.comparing(Account::getAge))
+            .forEach(System.out::println);
+
+        System.out.println("\nStream out to new list");
+        List<Account> seniors = accounts.stream()
+            .filter(acc -> acc.getAge() >= 55)
+            .collect(Collectors.toList());
+        System.out.println(seniors);
+
+        IntSummaryStatistics stats = accounts.stream()
+            .mapToInt(Account::getAge)
+            .summaryStatistics();
+
+        System.out.println("Average age: " + stats.getAverage());
+        System.out.println("Max age: " + stats.getMax());
+
+        Map<String, List<Account>> grouped = accounts.stream()
+            .collect(Collectors.groupingBy(acc -> {
+                int age = acc.getAge();
+                return age < 30 ? "Young" : age < 60 ? "Middle-aged" : "Senior";
+            }));
+
+        System.out.println("\nGrouped data");
+        List<Map.Entry<String, List<Account>>> groupedList = new ArrayList<>(grouped.entrySet());
+        for (var group : groupedList) {
+            System.out.println(group);
         }
     }
 
@@ -84,6 +122,7 @@ public class JavaReminders {
         // before returning accounts list output the map
         List<Map.Entry<Integer, Account>> mapList = new ArrayList<>(nameAgeMap.entrySet());
         mapList.sort(Comparator.comparing(entry -> entry.getValue().getName()));
+        System.out.println("Map output");
         for (var entry : mapList) {
             System.out.println(entry.getValue().getName()+" is "+entry.getValue().getAge()+" years old.");
         }
@@ -91,18 +130,22 @@ public class JavaReminders {
     }
 
     private static Account generateAccount() {
-        String[] names = {"Ava", "Liam", "Sophia", "Noah", "Isabella","Ethan", "Mia", "Lucas", "Amelia", "Oliver",
-                          "Charlotte", "Elijah", "Harper", "James", "Evelyn", "Ben", "Abigail", "Henry", "Emily", "Alex"};
+        String[] names = {
+            "Ava", "Liam", "Sophia", "Noah", "Isabella", "Ethan", "Mia", "Lucas", "Amelia", "Oliver",
+            "Charlotte", "Elijah", "Harper", "James", "Evelyn", "Ben", "Abigail", "Henry", "Emily", "Alex"
+        };
+
         int id = JavaReminders.getN();
         JavaReminders.incrementN();
-        String name = names[rand(8)];
-        int year = 1940 + rand(71); // 2010 - 1940 + 1 = 71
+
+        String name = names[rand(names.length)];
+        int year = 1940 + rand(71);
         int month = 1 + rand(12);
         YearMonth yearMonth = YearMonth.of(year, month);
         int day = 1 + rand(yearMonth.lengthOfMonth());
-        LocalDate dob = LocalDate.of(1940 + rand(71), 1 + rand(12), day);
-        Account account = new Account(id, name, dob);
-        return account;
+
+        LocalDate dob = LocalDate.of(year, month, day);
+        return new Account(id, name, dob);
     }
 
     private static int rand(int multiplier){
